@@ -1,17 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 16 22:47:45 2021
-
-@author: guipi
-"""
-import sim
-import numpy as np
-import time
-import matplotlib.pyplot as plt
-
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
+import numpy as np
 
 left = ctrl.Antecedent(np.arange(0, 101, 1), 'Left Sensor')
 front_l = ctrl.Antecedent(np.arange(0, 101, 1), 'Front-L Sensor')
@@ -91,109 +81,12 @@ rule16 = ctrl.Rule(left['near'] & front_l['near'] & front_r['near'] & right['nea
 direction_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9, rule10, rule11, rule12, rule13, rule14, rule15, rule16])
 required_direction = ctrl.ControlSystemSimulation(direction_ctrl)
 
+required_direction.input['Left Sensor'] = 6.5
+required_direction.input['Front-L Sensor'] = 9.8
+required_direction.input['Front-R Sensor'] = 9.8
+required_direction.input['Right Sensor'] = 7
 
+required_direction.compute()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-sim.simxFinish(-1) # just in case, close all opened connections
-clientID=sim.simxStart('127.0.0.1',19999,True,True,5000,5) # Connect to CoppeliaSim
-if clientID!=-1:
-    print ('Connected to remote API server')
-
-    
-    errorCodeMotorLeft, motorLeft = sim.simxGetObjectHandle(clientID, 'Pioneer_p3dx_leftMotor', sim.simx_opmode_blocking)
-    errorCodeMotorRight, motorRight = sim.simxGetObjectHandle(clientID, 'Pioneer_p3dx_rightMotor', sim.simx_opmode_blocking)
-    
-    
-    
-# Creating sensors
-    Ultra_Sensor=np.zeros((16,2))
-    Ultra_Sensor_Detected_Position=np.zeros((16,3))
-    Ultra_Sensor_Distance=np.zeros((16))
-    for i in range(1, 17):
-        Ultra_Sensor[i-1]=sim.simxGetObjectHandle(clientID, "Pioneer_p3dx_ultrasonicSensor"+str(i), sim.simx_opmode_blocking)
-        returnCode, detectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector= sim.simxReadProximitySensor(clientID, int(Ultra_Sensor[i-1][1]), sim.simx_opmode_streaming)
-        if detectionState:
-            Ultra_Sensor_Detected_Position[i-1]=detectedPoint
-        else:
-            Ultra_Sensor_Detected_Position[i-1]=[100,100,100]  
-    time.sleep(2)
- 
-    
- # Reading sensors
-    while 1:
-        for i in range(1, 17):
-            returnCode, detectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector= sim.simxReadProximitySensor(clientID, int(Ultra_Sensor[i-1][1]), sim.simx_opmode_buffer)
-            if detectionState:
-                Ultra_Sensor_Detected_Position[i-1]=detectedPoint
-            else:
-                Ultra_Sensor_Detected_Position[i-1]=[100,100,100]
-
-        
-        print(Ultra_Sensor_Detected_Position)
-        print('\n')
-
-        distance = np.linalg.norm(Ultra_Sensor_Detected_Position, axis=1)
-        print(distance)
-        print('\n')
-        
-        
-        
-        
-        
-        
-        
-        
-        # Fuzzy
-        required_direction.input['Left Sensor'] = distance[0]
-        required_direction.input['Front-L Sensor'] = distance[3]
-        required_direction.input['Front-R Sensor'] = distance[4]
-        required_direction.input['Right Sensor'] = distance[7]
-        
-        required_direction.compute()
-        print ('Direction: '+ str(required_direction.output['Angle']))
-        # direction.view(sim=required_direction)
-
-
-        right_speed = 0;
-        left_speed = 0;
-        
-        if required_direction.output['Angle']<0:
-            right_speed = 100
-            left_speed = required_direction.output['Angle']+100
-        else:
-            left_speed = 100
-            right_speed = (-1*required_direction.output['Angle'])+100
-            
-
-        sim.simxSetJointTargetVelocity(clientID, motorRight, right_speed/30, sim.simx_opmode_streaming)
-        sim.simxSetJointTargetVelocity(clientID, motorLeft, left_speed/30, sim.simx_opmode_streaming)
-        
-        
-
-
-
-
-        time.sleep(0.05)
-
-
-    # Before closing the connection to CoppeliaSim, make sure that the last command sent out had time to arrive. You can guarantee this with (for example):
-    sim.simxGetPingTime(clientID)
-
-    # Now close the connection to CoppeliaSim:
-    sim.simxFinish(clientID)
-else:
-    print ('Failed connecting to remote API server')
-print ('Program ended')
+print (required_direction.output['Angle'])
+direction.view(sim=required_direction)
