@@ -29,7 +29,11 @@ right['far'] = fuzz.trapmf(right.universe, [0, 30, 100, 100])
 # direction.automf(names=["1", "2", "3"])
 direction.automf(names=["Turn Left", "Straight", "Turn Right"])
 
-# direction.view()
+left.view()
+front_r.view()
+front_l.view()
+right.view()
+direction.view()
 
 rule1 = ctrl.Rule(left['far'] & front_l['far'] & front_r['far'] & right['far'], direction['Straight'])
 rule2 = ctrl.Rule(left['far'] & front_l['far'] & front_r['far'] & right['near'], direction['Turn Left'])
@@ -88,5 +92,5 @@ required_direction.input['Right Sensor'] = 7
 
 required_direction.compute()
 
-print (required_direction.output['Angle'])
-direction.view(sim=required_direction)
+# print (required_direction.output['Angle'])
+# direction.view(sim=required_direction)
